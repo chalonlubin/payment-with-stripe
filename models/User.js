@@ -4,19 +4,15 @@
 
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema({
-  username: String,
-  firstName: String,
-  lastName: String,
-  email: String,
-  password: String,
-  isAdmin: Boolean,
-  type: String,
-  stripeCustomerId: String,
-});
-
-const User = mongoose.model("User", userSchema);
+const User = mongoose.model(
+  "User",
+  new mongoose.Schema({
+    username: String,
+    password: String,
+    email: String,
+    role: String,
+    stripeCustomerId: String,
+  })
+);
 
 module.exports = User;
-
-
