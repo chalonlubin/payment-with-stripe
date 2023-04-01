@@ -10,8 +10,20 @@ const User = mongoose.model(
     username: String,
     password: String,
     email: String,
-    role: String,
-    stripeCustomerId: String,
+    role: {
+      type: String,
+      enum: ["client", "provider", "admin"],
+      default: "none",
+    },
+    billingID: String,
+    hasTrial: {
+      type: Boolean,
+      default: false,
+    },
+    endDate: {
+      type: Date,
+      default: null,
+    },
   })
 );
 
