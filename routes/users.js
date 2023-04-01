@@ -6,6 +6,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/User");
 
+/** Logs in user */
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   console.log("request body - ", req.body);
@@ -24,6 +25,7 @@ router.post("/login", async (req, res) => {
   res.json({ message: "Logged in successfully", user });
 });
 
+/** Registers new user */
 router.post("/register", async (req, res) => {
   const { username, email, password, role, stripeCustomerId } = req.body;
 
@@ -41,11 +43,12 @@ router.post("/register", async (req, res) => {
       stripeCustomerId,
     });
     await newUser.save();
-    console.log("user added!")
+    return res.json({ message: "Register successful", newUser });
   } catch (e) {
-    console.error(e);
+    return res
+      .status(400)
+      .json({ message: "Failed registration, please try again later" });
   }
-
 });
 
 module.exports = router;

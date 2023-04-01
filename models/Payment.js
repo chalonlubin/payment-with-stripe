@@ -9,9 +9,10 @@ const Payment = mongoose.model(
   new mongoose.Schema({
     from: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     to: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    amount: Number,
+    cost: Number,
     fee: Number,
     date: Date,
+    total: Number,
   })
 );
 
