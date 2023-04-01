@@ -1,42 +1,31 @@
-const express = require('express');
-const { MongoClient } = require('mongodb');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const dotenv = require('dotenv');
-// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+"use strict";
 
+const dotenv = require("dotenv");
 dotenv.config();
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
 
+const connectMongoDB = require("./service/db");
+const setupApp = require("./service/app");
 
-const uri = process.env.MONGODB_URI;
+const PORT = process.env.PORT || 5000;
 
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
-
-async function connectMongoDB() {
+async function startServer() {
   try {
-    await client.connect();
-    console.log('Connected to MongoDB');
-    const database = client.db('StripeTestDB');
+    await connectMongoDB();
+    const app = await setupApp();
 
-    // Register models and routes
-    require('./models/User')(database);
-    require('./models/Payment')(database);
-    app.use(require('./routes/auth')(database));
-    app.use(require('./routes/payment')(database));
-
-    const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    console.error("Error starting the server", error);
+    process.exit(1);
   }
 }
 
-connectMongoDB().catch(console.dir);
+startServer();
+
+
+
+
+
+

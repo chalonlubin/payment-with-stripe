@@ -1,12 +1,19 @@
-module.exports = (database) => {
-  const { Schema, model } = require('mongoose');
+"use strict";
 
-const paymentSchema = new Schema({
-  from: { type: Schema.Types.ObjectId, ref: 'User' },
-  to: { type: Schema.Types.ObjectId, ref: 'User' },
-  amount: Number,
-  fee: Number,
-  date: Date,
-});
-database.model('Payment', paymentSchema);
-}
+/** Payment model for mongodb */
+
+
+const mongoose = require("mongoose");
+
+  const paymentSchema = new mongoose.Schema({
+    from: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    to: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    amount: Number,
+    fee: Number,
+    date: Date,
+  });
+
+const Payment = mongoose.model("Payment", paymentSchema);
+
+module.exports = Payment;
+

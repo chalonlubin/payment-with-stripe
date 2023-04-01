@@ -1,3 +1,5 @@
+"use strict";
+
 module.exports = (database) => {
   const router = require('express').Router();
   const Payment = database.model('Payment');
