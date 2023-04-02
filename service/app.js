@@ -18,11 +18,6 @@ app.use("/users", userRoutes);
 app.use("/payments", paymentRoutes);
 
 
-// TEST ROUTE
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to the express." });
-});
-
 
 /** Handle 404 errors -- this matches everything */
 app.use(function (req, res, next) {

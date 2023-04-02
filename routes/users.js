@@ -5,10 +5,19 @@
 const express = require("express");
 const router = express.Router();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { createToken } = require("../helpers/token");
 const User = require("../models/User");
 const bcrypt = require("bcrypt");
 
-/** Logs in user */
+
+/** Temp route to get all users */
+router.get("/", async (rec, res) => {
+  let users = await User.find();
+  return res.json(users)
+})
+
+
+/** Logs in user and returns JWT if username and password are correct */
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -22,13 +31,14 @@ router.post("/login", async (req, res) => {
     return res.status(400).json({ message: "Invalid username or password" });
   }
 
-  res.json({ message: "Logged in successfully", user });
+  const token = createToken(user);
+
+  res.json({ message: "Logged in successfully", token });
 });
 
-/** Registers new user in db*/
+/** Registers new user in db, with stripe, and returns a JWT */
 router.post("/register", async (req, res) => {
-  const { username, email, password, role, billingID, hasTrial, endDate } =
-    req.body;
+  const { username, email, password, role, hasTrial, endDate } = req.body;
 
   const emailCheck = await User.findOne({ email });
   const usernameCheck = await User.findOne({ username });
@@ -40,12 +50,15 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    const hashedPass = await bcrypt.hash(password, 1);
+    let hashedPass = await bcrypt.hash(password, 1);
+    console.log("hashedPass", hashedPass);
+
     // register user with Stripe, need to modularize this later.
-    const stripeUser = await stripe.customers.create({
+    const stripeUser = await stripe.accounts.create({
       email,
-      name: username,
+      type: 'standard',
     });
+
     // register with mongoDB using Stripe billingID
     const newUser = new User({
       username,
@@ -56,10 +69,10 @@ router.post("/register", async (req, res) => {
       hasTrial,
       endDate,
     });
+
     await newUser.save();
-    return res
-      .status(200)
-      .json({ message: "Register successful", newUser, stripeUser });
+    const token = createToken(newUser);
+    return res.status(200).json({ message: "Register successful", token });
   } catch (e) {
     if (e.type === "StripeInvalidRequestError") {
       return res.status(400).json({ message: "Stripe error: " + e.message });
