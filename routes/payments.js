@@ -35,4 +35,8 @@ router.post("/create", async (req, res) => {
   }
 });
 
+router.post("/charge", (req, res) => {
+
+})
+
 module.exports = router;

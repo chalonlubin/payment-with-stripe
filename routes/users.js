@@ -4,50 +4,69 @@
 
 const express = require("express");
 const router = express.Router();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/User");
+const bcrypt = require("bcrypt");
 
 /** Logs in user */
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
-  console.log("request body - ", req.body);
 
   const user = await User.findOne({ username: username });
-  console.log("user - ", user);
-
   if (!user) {
-    return res.status(400).json({ message: "Invalid username or password" });
+    return res.status(400).json({ message: "Invalid username" });
   }
 
-  if (user.password !== password) {
+  const correctPassword = await bcrypt.compare(password, user.password);
+  if (!correctPassword) {
     return res.status(400).json({ message: "Invalid username or password" });
   }
 
   res.json({ message: "Logged in successfully", user });
 });
 
-/** Registers new user */
+/** Registers new user in db*/
 router.post("/register", async (req, res) => {
-  const { username, email, password, role, stripeCustomerId } = req.body;
+  const { username, email, password, role, billingID, hasTrial, endDate } =
+    req.body;
 
-  const user = await User.findOne({ email });
-  if (user) {
+  const emailCheck = await User.findOne({ email });
+  const usernameCheck = await User.findOne({ username });
+  if (emailCheck) {
     return res.status(400).json({ message: `${email} is already in use` });
+  }
+  if (usernameCheck) {
+    return res.status(400).json({ message: `${username} is already in use` });
   }
 
   try {
+    const hashedPass = await bcrypt.hash(password, 1);
+    // register user with Stripe, need to modularize this later.
+    const stripeUser = await stripe.customers.create({
+      email,
+      name: username,
+    });
+    // register with mongoDB using Stripe billingID
     const newUser = new User({
       username,
-      password,
+      password: hashedPass,
       email,
       role,
-      stripeCustomerId,
+      billingID: stripeUser.id,
+      hasTrial,
+      endDate,
     });
     await newUser.save();
-    return res.json({ message: "Register successful", newUser });
+    return res
+      .status(200)
+      .json({ message: "Register successful", newUser, stripeUser });
   } catch (e) {
+    if (e.type === "StripeInvalidRequestError") {
+      return res.status(400).json({ message: "Stripe error: " + e.message });
+    }
     return res
       .status(400)
-      .json({ message: "Failed registration, please try again later" });
+      .json({ message: "Failed registration, please try again later", e });
   }
 });
 
