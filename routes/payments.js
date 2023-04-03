@@ -7,13 +7,14 @@ const router = express.Router();
 const Payment = require("../models/Payment");
 const User = require("../models/User");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const { authenticateJWT } = require("../middleware/auth");
 const PLATFORM_OWNER_STRIPE_ACCOUNT_ID =
   process.env.PLATFORM_OWNER_STRIPE_ACCOUNT_ID;
 
-/** Creates a charge and records payment in the database */
-router.post("/create", async (req, res) => {
+/** Creates a charge and records payment in the database for logged in user */
+router.post("/create", authenticateJWT, async (req, res) => {
+  const from = req.user.username;
   const {
-    from,
     to,
     cost,
     cardNumber,
@@ -44,15 +45,15 @@ router.post("/create", async (req, res) => {
 
     const fromUser = await User.findOne({ username: from });
     const toUser = await User.findOne({ username: to });
-    console.log("toUser:", toUser)
-    console.log("fromUser:", fromUser)
+    console.log("toUser:", toUser);
+    console.log("fromUser:", fromUser);
 
     if (!fromUser || !toUser) {
       return res.status(400).json({ message: "One or both users not found" });
     }
 
     const charge = await stripe.charges.create({
-      amount: Math.round(cost * 1.01 * 100), // Stripe accepts the amount in cents
+      amount: Math.round(cost * 1.01 * 100), // Convert amount to cents for Stripe
       currency: "usd",
       source: cardToken.id,
       description: `Stripe Charge Of Amount ${cost} for One Time Payment`,
@@ -82,7 +83,7 @@ router.post("/create", async (req, res) => {
         total: cost * 1.01,
         date: currentDate,
       });
-      await payment.save();
+      await payment.save(); // create record of payment to database
 
       res.json({ message: "Payment created successfully", payment });
     } else {
