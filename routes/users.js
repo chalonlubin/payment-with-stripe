@@ -7,7 +7,6 @@ const router = express.Router();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { createToken } = require("../helpers/token");
 const User = require("../models/User");
-const { authenticateJWT } = require("../middleware/auth");
 const bcrypt = require("bcrypt");
 
 /** Temp route to get all users */
@@ -17,7 +16,7 @@ router.get("/", async (rec, res) => {
 });
 
 /** Logs in user and returns JWT if username and password are correct */
-router.post("/login", authenticateJWT, async (req, res) => {
+router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   const user = await User.findOne({ username: username });
@@ -25,7 +24,7 @@ router.post("/login", authenticateJWT, async (req, res) => {
     return res.status(400).json({ message: "Invalid username" });
   }
 
-  const correctPassword = await bcrypt.compare(password, user.password);
+  const correctPassword = bcrypt.compare(password, user.password);
   if (!correctPassword) {
     return res.status(400).json({ message: "Invalid username or password" });
   }
