@@ -49,7 +49,8 @@ router.post("/create", authenticateJWT, async (req, res) => {
     console.log("fromUser:", fromUser);
 
     if (!fromUser || !toUser) {
-      return res.status(400).json({ message: "One or both users not found" });
+      const notFound = !fromUser ? from : to;
+      return res.status(400).json({ message: `${notFound} doesn't exist` });
     }
 
     const charge = await stripe.charges.create({

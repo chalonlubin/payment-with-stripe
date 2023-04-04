@@ -10,8 +10,6 @@ function createToken(user) {
       payload: {
         username: user.username,
         role: user.role,
-        email: user.email,
-        billingID: user.billingID,
       },
     },
     SECRET_KEY,

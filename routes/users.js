@@ -12,7 +12,7 @@ const bcrypt = require("bcrypt");
 
 /** Temp route to get all users */
 router.get("/", async (rec, res) => {
-  let users = await User.find();
+  const users = await User.find();
   return res.json(users);
 });
 
