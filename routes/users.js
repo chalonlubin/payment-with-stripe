@@ -18,20 +18,25 @@ router.get("/", async (rec, res) => {
 /** Logs in user and returns JWT if username and password are correct */
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
+  console.log("req.body", req.body);
 
   const user = await User.findOne({ username: username });
   if (!user) {
-    return res.status(400).json({ message: "Invalid username" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid username" });
   }
+  // bug story... await your bcyrpt functions because they return promises
+  const correctPassword = await bcrypt.compare(password, user.password);
 
-  const correctPassword = bcrypt.compare(password, user.password);
   if (!correctPassword) {
-    return res.status(400).json({ message: "Invalid username or password" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Invalid username or password" });
   }
-
   const token = createToken(user);
 
-  res.json({ message: "Logged in successfully", token });
+  res.json({ success: true, token });
 });
 
 /** Registers new user in db, with stripe, and returns a JWT */
@@ -41,10 +46,14 @@ router.post("/register", async (req, res) => {
   const emailCheck = await User.findOne({ email });
   const usernameCheck = await User.findOne({ username });
   if (emailCheck) {
-    return res.status(400).json({ message: `${email} is already in use` });
+    return res
+      .status(400)
+      .json({ success: false, message: `${email} is already in use` });
   }
   if (usernameCheck) {
-    return res.status(400).json({ message: `${username} is already in use` });
+    return res
+      .status(400)
+      .json({ success: false, message: `${username} is already in use` });
   }
 
   try {
@@ -69,14 +78,20 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
     const token = createToken(newUser);
-    return res.status(200).json({ message: "Register successful", token });
+    return res
+      .status(200)
+      .json({ success: true, message: "Register successful", token });
   } catch (e) {
     if (e.type === "StripeInvalidRequestError") {
-      return res.status(400).json({ message: "Stripe error: " + e.message });
+      return res
+        .status(400)
+        .json({ success: false, message: "Stripe error: " + e.message });
     }
-    return res
-      .status(400)
-      .json({ message: "Failed registration, please try again later", e });
+    return res.status(400).json({
+      success: false,
+      message: "Failed registration, please try again later",
+      e,
+    });
   }
 });
 
